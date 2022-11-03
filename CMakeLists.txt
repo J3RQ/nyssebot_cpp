@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(Nyssebot VERSION 0.0.1 DESCRIPTION "A simple Discord for getting Tampere public transportation information.")
+project(Nyssebot VERSION 0.0.1 DESCRIPTION "A simple Discord bot for getting Tampere public transportation information.")
 
 add_subdirectory(libs/DPP)
 add_subdirectory(libs/cpr)

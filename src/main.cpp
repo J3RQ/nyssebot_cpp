@@ -57,9 +57,12 @@ int main()
             std::map<std::string, std::string> parameters;
             for (std::string param : params) {
                 try {
-                    parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
-                }
-                catch(const std::exception& e) {
+                    if (param == "query" || param == "line" || param == "date") {
+                        parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
+                    }  else {
+                        parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
+                    }
+                } catch(const std::exception& e) {
                     bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
                 }  
             }   
@@ -70,6 +73,7 @@ int main()
     bot.on_ready([&bot](const dpp::ready_t & event) {
         if (dpp::run_once<struct register_bot_commands>()) {
             dpp::slashcommand query("stop", "Get departure timetable from a stop", bot.me.id);
+            query.set_dm_permission(true);
             query.add_option(dpp::command_option(dpp::co_string, "query", "Stop ID or name.", true));
             query.add_option(dpp::command_option(dpp::co_string, "line", "Limit results to desired lines. Separate with commas.", false));
             query.add_option(dpp::command_option(dpp::co_integer, "hour", "Hour to search at.", false).set_min_value(0).set_max_value(23));

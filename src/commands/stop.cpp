@@ -5,7 +5,7 @@ using json = nlohmann::json;
 
 std::map<std::string, int> getTime (std::time_t timestamp) {
     std::map<std::string, int> timeMap;
-    auto tm = *std::gmtime(&timestamp);
+    auto tm = *std::localtime(&timestamp);
     std::ostringstream day, month, year, hour, minute;
     day << std::put_time(&tm, "%d"), month << std::put_time(&tm, "%m"), year << std::put_time(&tm, "%Y");
     hour << std::put_time(&tm, "%H"), minute << std::put_time(&tm, "%M");
@@ -31,32 +31,42 @@ std::string stopSearch(std::map<std::string, std::string> stopParams) {
         json stopPayload;
         int departureAmount = (stopParams.count("line") == 0) ? 16 : 24;
 
-        std::time_t timeNow = std::time(nullptr);     
+        std::time_t epochTimestamp = std::time(nullptr);     
 
         bool hourEntered = stopParams.count("hour") != 0;
         bool minuteEntered = stopParams.count("minute") != 0;
         bool dateEntered = stopParams.count("date") != 0;
 
         if (hourEntered || minuteEntered || dateEntered) {
-            std::map<std::string, int> curTime = getTime(timeNow);
+            std::map<std::string, int> searchTime = getTime(epochTimestamp);
             if (hourEntered && minuteEntered) {
-                curTime["hour"] = std::stoi(stopParams["hour"]), curTime["minute"] = std::stoi(stopParams["minute"]);
-            } else if (dateEntered && hourEntered && minuteEntered) {
-                curTime["hour"] = std::stoi(stopParams["hour"]), curTime["minute"] = std::stoi(stopParams["minute"]);
+                searchTime["hour"] = std::stoi(stopParams["hour"]), searchTime["minute"] = std::stoi(stopParams["minute"]);
+            }
+            if (dateEntered) {
                 std::vector<std::string> date = splitString(stopParams["date"], '.');
                 if (date.size() == 2) {
-                    curTime["day"] = std::stoi(date[0]), curTime["month"] = std::stoi(date[1]);
+                    searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]);
                 } else if(date.size() == 3) {
-                    curTime["day"] = std::stoi(date[0]), curTime["month"] = std::stoi(date[1]), curTime["year"] = std::stoi(date[2]);
+                    searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]), searchTime["year"] = std::stoi(date[2]);
                 } else {
                     return std::string("```Invalid date.```");
                 }
-            } else if (hourEntered && !minuteEntered) {
-                curTime["hour"] = std::stoi(stopParams["hour"]);
-            } else if (!hourEntered && minuteEntered) {
-                curTime["minute"] = std::stoi(stopParams["minute"]);
+            } 
+            if (hourEntered && !minuteEntered) {
+                searchTime["hour"] = std::stoi(stopParams["hour"]);
+            } 
+            if (!hourEntered && minuteEntered) {
+                searchTime["minute"] = std::stoi(stopParams["minute"]);
             }
+            struct tm t = {0};
+            t.tm_year = searchTime["year"] - 1900;
+            t.tm_mon = searchTime["month"] - 1;
+            t.tm_mday = searchTime["day"];
+            t.tm_hour = searchTime["hour"];
+            t.tm_min =  searchTime["minute"];
+            std::time_t timeSinceEpoch = mktime(&t);
 
+            epochTimestamp = timeSinceEpoch;
         }
              
         stopPayload["query"] = fmt::format("query {{\n"
@@ -80,7 +90,7 @@ std::string stopSearch(std::map<std::string, std::string> stopParams) {
                     "}}\n"
                 "}}\n"      
             "}}\n"   
-        "}}\n", stopParams["query"], departureAmount, timeNow);
+        "}}\n", stopParams["query"], departureAmount, epochTimestamp);
 
 
         cpr::Response r = cpr::Post(cpr::Url{"https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"},
