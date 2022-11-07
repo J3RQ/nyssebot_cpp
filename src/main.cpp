@@ -62,18 +62,7 @@ int main() {
                     bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
                 }  
             }
-            bool isId = true;
-            for(char& c : parameters["query"]) {
-                if (isdigit(c) == false) {
-                    isId = false;
-                }
-            }
-            if (isId) {
-                event.reply(stopSearch(parameters));
-            } else {
-                dpp::message stopMessage = stopSelect(event.command.channel_id, parameters);
-                event.reply(stopMessage);
-            }
+            bot.message_create(stopMain(event.command.channel_id, parameters));
         }
     });
  

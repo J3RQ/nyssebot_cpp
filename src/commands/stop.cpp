@@ -18,7 +18,21 @@ bool stringInVector (std::string key, std::vector<std::string> checkVec) {
     return (std::find(checkVec.begin(), checkVec.end(), key) == checkVec.end());
 }
 
-std::string stopSearch(std::map<std::string, std::string> stopParams) {
+dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
+    bool isId = true;
+        for(char& c : stopParams["query"]) {
+            if (isdigit(c) == false) {
+                isId = false;
+            }
+        }
+        if (isId) {
+            return stopSearch(channel, stopParams);
+        } else {
+            return stopSelect(channel, stopParams);
+        }
+}
+
+dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
      
     json stopPayload;
     int departureAmount = (stopParams.count("line") == 0) ? 16 : 24;
@@ -46,7 +60,7 @@ std::string stopSearch(std::map<std::string, std::string> stopParams) {
             } else if(date.size() == 3) {
                 searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]), searchTime["year"] = std::stoi(date[2]);
             } else {
-                return std::string("```Invalid date.```");
+                return dpp::message(channel, std::string("```Invalid date.```"));
             }
         } 
     
@@ -93,7 +107,7 @@ std::string stopSearch(std::map<std::string, std::string> stopParams) {
     std::string message;
     if (responseJson.is_null()) {
         message.append("```That stop doesn't exist.```");
-        return message;
+        return dpp::message(channel, message);
     }
 
     if (responseJson["stoptimesWithoutPatterns"].size() > 0)
@@ -121,7 +135,7 @@ std::string stopSearch(std::map<std::string, std::string> stopParams) {
         } else {
             message.append("```No departures in the next three hours.```");
         }
-        return message;
+        return dpp::message(channel, message);
     }
     
 dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
@@ -143,8 +157,7 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
 
     json responseJson = json::parse(r.text)["data"]["stops"];
 
-    if (responseJson.size() > 1 && responseJson.dump().find("tampere") != std::string::npos)
-    {   
+    if (responseJson.size() > 1 && responseJson.dump().find("tampere") != std::string::npos) {   
         std::string messageBuilder = "__**Choose stop**__:\n";
         int index = 0;
         for (json stopDict : responseJson) {
@@ -157,7 +170,7 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
         return message;
     } else if (responseJson.size() > 0 && responseJson[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
         stopParams["query"] = responseJson[0]["code"];
-        return dpp::message(channel, stopSearch(stopParams));
+        return stopSearch(channel, stopParams);
     } else {
         message.set_content("```No stops found.```");
     }

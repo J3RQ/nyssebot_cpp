@@ -12,8 +12,8 @@
 #include <iomanip>
 #include <sstream>
 
-
-std::string stopSearch(std::map<std::string, std::string> stopParams);
+dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string> stopParams);
+dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::string> stopParams);
 dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::string> stopParams);
 
 #endif //NYSSEBOT_STOP_H
