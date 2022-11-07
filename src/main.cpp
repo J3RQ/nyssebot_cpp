@@ -5,8 +5,6 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <algorithm>
-#include <typeinfo>
 #include "commands/stop.h"
 #include "utils/utils.h"
 
@@ -27,8 +25,7 @@ public:
         std::map<std::string, std::string> configmap;
         std::string possibleParams[2] = {"TOKEN", "MB_APIKEY"};
 
-        for (std::size_t i = 0; i < configs.size(); i++)
-        {
+        for (std::size_t i = 0; i < configs.size(); i++) {
             std::vector<std::string> splitParam = splitString(configs[i], '=');
             if (std::find(std::begin(possibleParams), std::end(possibleParams), splitParam[0]) != std::end(possibleParams))
             {
@@ -43,14 +40,13 @@ public:
     }
 };
 
-int main()
-{
+int main() {
     Config config;
     config.getConfig();
     dpp::cluster bot(config.token);
 
     bot.on_log(dpp::utility::cout_logger());
-
+    bot.set_presence(dpp::presence(dpp::ps_online, dpp::activity_type::at_game, "Nysse API"));
     bot.on_slashcommand([&bot](const dpp::slashcommand_t & event) {
         if (event.command.get_command_name() == "stop") {
             std::string params[5] = {"query", "line", "hour", "minute", "date"};
@@ -65,8 +61,19 @@ int main()
                 } catch(const std::exception& e) {
                     bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
                 }  
-            }   
-            event.reply(stopSearch(parameters));
+            }
+            bool isId = true;
+            for(char& c : parameters["query"]) {
+                if (isdigit(c) == false) {
+                    isId = false;
+                }
+            }
+            if (isId) {
+                event.reply(stopSearch(parameters));
+            } else {
+                dpp::message stopMessage = stopSelect(event.command.channel_id, parameters);
+                event.reply(stopMessage);
+            }
         }
     });
  
