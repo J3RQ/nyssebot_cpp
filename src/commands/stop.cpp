@@ -20,20 +20,19 @@ bool stringInVector (std::string key, std::vector<std::string> checkVec) {
 
 dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
     bool isId = true;
-        for(char& c : stopParams["query"]) {
-            if (isdigit(c) == false) {
-                isId = false;
-            }
+    for(char& c : stopParams["query"]) {
+        if (isdigit(c) == false) {
+            isId = false;
         }
-        if (isId) {
-            return stopSearch(channel, stopParams);
-        } else {
-            return stopSelect(channel, stopParams);
-        }
+    }
+    if (isId) {
+        return stopSearch(channel, stopParams);
+    } else {
+        return stopSelect(channel, stopParams);
+    }
 }
 
 dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
-     
     json stopPayload;
     int departureAmount = (stopParams.count("line") == 0) ? 16 : 24;
 
@@ -159,14 +158,17 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
 
     if (responseJson.size() > 1 && responseJson.dump().find("tampere") != std::string::npos) {   
         std::string messageBuilder = "__**Choose stop**__:\n";
-        int index = 0;
+        dpp::component menuSelector;    
+
+        menuSelector.set_type(dpp::cot_selectmenu).set_placeholder("Choose stop...").set_id("stopSelector");
         for (json stopDict : responseJson) {
-            if (stopDict["gtfsId"].dump().find("tampere") != std::string::npos) {  
-                messageBuilder.append(fmt::format("```{} (ID: {})```", stopDict["name"].get<std::string>(), stopDict["code"].get<std::string>()));
-                index += 1;   
+            if (stopDict["gtfsId"].dump().find("tampere") != std::string::npos) {
+                std::string code = stopDict["code"].get<std::string>();
+                menuSelector.add_select_option(dpp::select_option(stopDict["name"].get<std::string>(), code, fmt::format("ID: {}", code)));  
             }
         };
         message.set_content(messageBuilder);
+        message.add_component(dpp::component().add_component(menuSelector));
         return message;
     } else if (responseJson.size() > 0 && responseJson[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
         stopParams["query"] = responseJson[0]["code"];

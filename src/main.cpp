@@ -62,7 +62,15 @@ int main() {
                     bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
                 }  
             }
-            bot.message_create(stopMain(event.command.channel_id, parameters));
+            event.reply(stopMain(event.command.channel_id, parameters));
+        }
+    });
+
+    bot.on_select_click([&bot](const dpp::select_click_t & event) {
+        if (event.custom_id == "stopSelector") {
+            std::map<std::string, std::string> params;
+            params["query"] = event.values[0];
+            event.reply(stopMain(event.command.channel_id, params));
         }
     });
  
