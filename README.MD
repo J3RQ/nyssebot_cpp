@@ -1,6 +1,11 @@
 # Nyssebot
 
 ## Dependencies
+```
+mkdir libs
+git clone 
+```
+
 brainboxdotcc/DPP
 libfmt/fmt
 libcpr/cpr

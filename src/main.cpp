@@ -46,7 +46,7 @@ int main() {
     dpp::cluster bot(config.token);
 
     bot.on_log(dpp::utility::cout_logger());
-    bot.set_presence(dpp::presence(dpp::ps_online, dpp::activity_type::at_game, "Nysse API"));
+   
     bot.on_slashcommand([&bot](const dpp::slashcommand_t & event) {
         if (event.command.get_command_name() == "stop") {
             std::string params[5] = {"query", "line", "hour", "minute", "date"};
@@ -68,13 +68,18 @@ int main() {
 
     bot.on_select_click([&bot](const dpp::select_click_t & event) {
         if (event.custom_id == "stopSelector") {
+            dpp::message originalMsg = bot.message_get_sync(event.command.message_id, event.command.channel_id);
+            originalMsg.components.clear();
             std::map<std::string, std::string> params;
             params["query"] = event.values[0];
-            event.reply(stopMain(event.command.channel_id, params));
+            originalMsg.set_content(stopMain(event.command.channel_id, params).content);
+            bot.message_edit_sync(originalMsg);
+            event.cancel_event();
         }
     });
  
     bot.on_ready([&bot](const dpp::ready_t & event) {
+        bot.set_presence(dpp::presence(dpp::ps_online, dpp::activity_type::at_game, "Nysse API"));
         if (dpp::run_once<struct register_bot_commands>()) {
             dpp::slashcommand query("stop", "Get departure timetable from a stop", bot.me.id);
             query.set_dm_permission(true);
