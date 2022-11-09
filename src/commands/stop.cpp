@@ -129,7 +129,7 @@ dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::strin
             int timestamp = depDict["realtimeDeparture"].get<int>();
             timestamp = (timestamp > 86400) ? timestamp - 86400 : timestamp;
             std::string parsedTime = fmt::format("{:02}:{:02}", timestamp / (60*60), (timestamp % (60*60)) / 60);
-            message.append(fmt::format("```Linja: {}\n\tMääränpää: {}\n\tAika: {}```", depDict["trip"]["route"]["shortName"].get<std::string>(), depDict["headsign"].get<std::string>(), parsedTime));
+            message.append(fmt::format("```{} | {} {}```", parsedTime, depDict["trip"]["route"]["shortName"].get<std::string>(), depDict["headsign"].get<std::string>()));
             }
         } else {
             message.append("```No departures in the next three hours.```");

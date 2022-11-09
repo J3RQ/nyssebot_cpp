@@ -69,12 +69,18 @@ int main() {
     bot.on_select_click([&bot](const dpp::select_click_t & event) {
         if (event.custom_id == "stopSelector") {
             dpp::message originalMsg = bot.message_get_sync(event.command.message_id, event.command.channel_id);
-            originalMsg.components.clear();
-            std::map<std::string, std::string> params;
-            params["query"] = event.values[0];
-            originalMsg.set_content(stopMain(event.command.channel_id, params).content);
-            bot.message_edit_sync(originalMsg);
-            event.cancel_event();
+            if (event.command.usr.id == originalMsg.interaction.usr.id) {
+                originalMsg.components.clear();
+                std::map<std::string, std::string> params;
+                params["query"] = event.values[0];
+                originalMsg.set_content(stopMain(event.command.channel_id, params).content);
+                bot.message_edit_sync(originalMsg);
+                event.cancel_event();
+            } else {
+                dpp::message wrongUser = dpp::message(event.command.channel_id, "You didn't call this embed!");
+                wrongUser.set_flags(dpp::m_ephemeral);
+                event.reply(wrongUser);
+            }
         }
     });
  
