@@ -42,7 +42,6 @@ public:
 
 int main() {
     Config config;
-    Eventcache eventCache;
     config.getConfig();
     dpp::cluster bot(config.token);
 
