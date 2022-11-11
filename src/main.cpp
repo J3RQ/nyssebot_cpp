@@ -40,14 +40,32 @@ public:
     }
 };
 
+class Eventcache {
+public:
+    std::map<dpp::snowflake, std::map<std::string, std::string>> eventMap; 
+
+    std::map<std::string, std::string> getEvent(dpp::snowflake messageId) {
+        return eventMap[messageId];
+    }
+
+    void setEvent(dpp::snowflake messageId, std::map<std::string, std::string> event) {
+        eventMap[messageId] = event;
+    }
+
+    void removeEvent(dpp::snowflake messageId) {
+        eventMap.erase(messageId);
+    }
+};
+
 int main() {
     Config config;
+    Eventcache eventCache;
     config.getConfig();
     dpp::cluster bot(config.token);
 
     bot.on_log(dpp::utility::cout_logger());
    
-    bot.on_slashcommand([&bot](const dpp::slashcommand_t & event) {
+    bot.on_slashcommand([&bot, &eventCache](const dpp::slashcommand_t & event) {
         if (event.command.get_command_name() == "stop") {
             std::string params[5] = {"query", "line", "hour", "minute", "date"};
             std::map<std::string, std::string> parameters;
@@ -62,19 +80,33 @@ int main() {
                     bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
                 }  
             }
-            event.reply(stopMain(event.command.channel_id, parameters));
+            dpp::message stopMessage = stopMain(event.command.channel_id, parameters);
+            event.reply(stopMessage);
+            if (stopMessage.components.empty() == false) {
+                event.get_original_response([&bot, &event, &eventCache, stopMessage, parameters] (const dpp::confirmation_callback_t& callback) {
+                if (callback.is_error()) return;
+                    dpp::message reply = std::get<dpp::message>(callback.value);    
+                    eventCache.setEvent(reply.id, parameters);
+                });
+            }   
         }
     });
 
-    bot.on_select_click([&bot](const dpp::select_click_t & event) {
+    bot.on_select_click([&bot, &eventCache](const dpp::select_click_t & event) {
         if (event.custom_id == "stopSelector") {
             dpp::message originalMsg = bot.message_get_sync(event.command.message_id, event.command.channel_id);
             if (event.command.usr.id == originalMsg.interaction.usr.id) {
+                std::map<std::string, std::string> commandParams;
+                try {
+                    commandParams = eventCache.getEvent(event.command.message_id);
+                    commandParams["query"] = event.values[0];
+                } catch(const std::exception& e) {
+                    commandParams["query"] = event.values[0];
+                }
                 originalMsg.components.clear();
-                std::map<std::string, std::string> params;
-                params["query"] = event.values[0];
-                originalMsg.set_content(stopMain(event.command.channel_id, params).content);
+                originalMsg.set_content(stopMain(event.command.channel_id, commandParams).content);
                 bot.message_edit_sync(originalMsg);
+                eventCache.removeEvent(event.command.message_id);
                 event.cancel_event();
             } else {
                 dpp::message wrongUser = dpp::message(event.command.channel_id, "You didn't call this embed!");
