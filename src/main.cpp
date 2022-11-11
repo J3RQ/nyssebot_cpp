@@ -42,6 +42,7 @@ public:
 
 int main() {
     Config config;
+    Eventcache eventCache;
     config.getConfig();
     dpp::cluster bot(config.token);
 
@@ -93,7 +94,7 @@ int main() {
             query.add_option(dpp::command_option(dpp::co_string, "line", "Limit results to desired lines. Separate with commas.", false));
             query.add_option(dpp::command_option(dpp::co_integer, "hour", "Hour to search at.", false).set_min_value(0).set_max_value(23));
             query.add_option(dpp::command_option(dpp::co_integer, "minute", "Minute to search at.", false).set_min_value(0).set_max_value(59));
-            query.add_option(dpp::command_option(dpp::co_string, "date", "Date. Format DD.MM or alternatively DD.MM.YYYY", false));
+            query.add_option(dpp::command_option(dpp::co_string, "date", "Date. Format DD.MM or alternatively DD.MM.YYYY", false).set_max_length(10));
             
             bot.global_command_create(query);
         }

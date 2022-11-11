@@ -156,12 +156,19 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
 
     json responseJson = json::parse(r.text)["data"]["stops"];
 
-    if (responseJson.size() > 1 && responseJson.dump().find("tampere") != std::string::npos) {   
+    json nysseStops = json::array();
+    for (json stop : responseJson) {
+        if (stop["gtfsId"].dump().find("tampere") != std::string::npos) {
+            nysseStops.push_back(stop);
+        }
+    }
+    
+    if (nysseStops.size() > 1 && nysseStops.dump().find("tampere") != std::string::npos) {   
         std::string messageBuilder = "__**Choose stop**__:\n";
         dpp::component menuSelector;    
 
         menuSelector.set_type(dpp::cot_selectmenu).set_placeholder("Choose stop...").set_id("stopSelector");
-        for (json stopDict : responseJson) {
+        for (json stopDict : nysseStops) {
             if (stopDict["gtfsId"].dump().find("tampere") != std::string::npos) {
                 std::string code = stopDict["code"].get<std::string>();
                 menuSelector.add_select_option(dpp::select_option(stopDict["name"].get<std::string>(), code, fmt::format("ID: {}", code)));  
@@ -170,8 +177,8 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
         message.set_content(messageBuilder);
         message.add_component(dpp::component().add_component(menuSelector));
         return message;
-    } else if (responseJson.size() > 0 && responseJson[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
-        stopParams["query"] = responseJson[0]["code"];
+    } else if (nysseStops.size() > 0 && nysseStops[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
+        stopParams["query"] = nysseStops[0]["code"];
         return stopSearch(channel, stopParams);
     } else {
         message.set_content("```No stops found.```");
