@@ -3,21 +3,6 @@
 
 using json = nlohmann::json;
 
-std::map<std::string, int> getTime (std::time_t timestamp) {
-    std::map<std::string, int> timeMap;
-    auto tm = *std::localtime(&timestamp);
-    std::ostringstream day, month, year, hour, minute;
-    day << std::put_time(&tm, "%d"), month << std::put_time(&tm, "%m"), year << std::put_time(&tm, "%Y");
-    hour << std::put_time(&tm, "%H"), minute << std::put_time(&tm, "%M");
-    timeMap["day"] = std::stoi(day.str()), timeMap["month"] = std::stoi(month.str()), timeMap["year"] = std::stoi(year.str());
-    timeMap["hour"] = std::stoi(hour.str()), timeMap["minute"] = std::stoi(minute.str());
-    return timeMap; 
-}
-
-bool stringInVector (std::string key, std::vector<std::string> checkVec) {
-    return (std::find(checkVec.begin(), checkVec.end(), key) == checkVec.end());
-}
-
 dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
     bool isId = true;
     for(char& c : stopParams["query"]) {
@@ -28,7 +13,7 @@ dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string>
     if (isId) {
         return stopSearch(channel, stopParams);
     } else {
-        return stopSelect(channel, stopParams);
+        return stopSelect(channel, stopParams, std::string("stopSelector"));
     }
 }
 
@@ -136,19 +121,20 @@ dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::strin
         }
         return dpp::message(channel, message);
     }
-    
-dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
+
+json stopRequest(std::string query) {
     json stopPayload;
-    dpp::message message(channel, "");
 
     stopPayload["query"] = fmt::format("query {{\n"
         "stops(name: \"{}\") {{\n"
             "name\n"
             "gtfsId\n"
             "code\n"
+            "lat\n"
+            "lon\n"
             "}}\n"     
         "}}\"\n"
-    ")", stopParams["query"]);
+    ")", query);
 
     cpr::Response r = cpr::Post(cpr::Url{"https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"},
     cpr::Body{stopPayload.dump()},
@@ -162,13 +148,20 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
             nysseStops.push_back(stop);
         }
     }
+    return nysseStops;
+}
     
-    if (nysseStops.size() > 1 && nysseStops.dump().find("tampere") != std::string::npos) {   
+dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::string> stopParams, std::string selectorId) {
+    dpp::message message(channel, "");
+
+    json stopList = stopRequest(stopParams["query"]);
+    
+    if (stopList.size() > 1 && stopList.dump().find("tampere") != std::string::npos) {   
         std::string messageBuilder = "__**Choose stop**__:\n";
         dpp::component menuSelector;    
 
-        menuSelector.set_type(dpp::cot_selectmenu).set_placeholder("Choose stop...").set_id("stopSelector");
-        for (json stopDict : nysseStops) {
+        menuSelector.set_type(dpp::cot_selectmenu).set_placeholder("Choose stop...").set_id(selectorId);
+        for (json stopDict : stopList) {
             if (stopDict["gtfsId"].dump().find("tampere") != std::string::npos) {
                 std::string code = stopDict["code"].get<std::string>();
                 menuSelector.add_select_option(dpp::select_option(stopDict["name"].get<std::string>(), code, fmt::format("ID: {}", code)));  
@@ -177,8 +170,8 @@ dpp::message stopSelect(dpp::snowflake channel, std::map<std::string, std::strin
         message.set_content(messageBuilder);
         message.add_component(dpp::component().add_component(menuSelector));
         return message;
-    } else if (nysseStops.size() > 0 && nysseStops[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
-        stopParams["query"] = nysseStops[0]["code"];
+    } else if (stopList.size() > 0 && stopList[0]["gtfsId"].dump().find("tampere") != std::string::npos) {
+        stopParams["query"] = stopList[0]["code"];
         return stopSearch(channel, stopParams);
     } else {
         message.set_content("```No stops found.```");
