@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <fstream>
+#include <dpp/message.h>
 
 class Config
 {
@@ -22,5 +23,13 @@ public:
 std::vector<std::string> splitString(std::string inputString, char splitChar);
 std::map<std::string, int> getTime (std::time_t timestamp);
 bool stringInVector (std::string key, std::vector<std::string> checkVec);
+
+class Eventcache {
+public:
+    std::map<dpp::snowflake, std::map<std::string, std::string>> eventMap; 
+    std::map<std::string, std::string> getEvent(dpp::snowflake messageId);
+    void setEvent(dpp::snowflake messageId, std::map<std::string, std::string> event);
+    void removeEvent(dpp::snowflake messageId);
+};
 
 #endif //NYSSEBOT_UTILS_H

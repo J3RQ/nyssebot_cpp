@@ -8,7 +8,7 @@ add_subdirectory(libs/DPP)
 add_subdirectory(libs/cpr)
 add_subdirectory(libs/fmt)
 
-add_executable(${PROJECT_NAME} src/main.cpp src/commands/stop.cpp src/commands/stop.h src/utils/utils.cpp src/utils/utils.h src/commands/map.cpp src/commands/map.h)
+add_executable(${PROJECT_NAME} src/main.cpp src/commands/stop.cpp src/commands/stop.h src/utils/utils.cpp src/utils/utils.h src/commands/map.cpp src/commands/map.h src/commands/route.cpp src/commands/route.h)
 
 target_link_libraries(${PROJECT_NAME}
     dpp

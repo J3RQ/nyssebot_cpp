@@ -42,11 +42,27 @@ std::map<std::string, int> getTime (std::time_t timestamp) {
     std::ostringstream day, month, year, hour, minute;
     day << std::put_time(&tm, "%d"), month << std::put_time(&tm, "%m"), year << std::put_time(&tm, "%Y");
     hour << std::put_time(&tm, "%H"), minute << std::put_time(&tm, "%M");
-    timeMap["day"] = std::stoi(day.str()), timeMap["month"] = std::stoi(month.str()), timeMap["year"] = std::stoi(year.str());
-    timeMap["hour"] = std::stoi(hour.str()), timeMap["minute"] = std::stoi(minute.str());
+    timeMap["day"] = std::stoi(day.str());
+    timeMap["month"] = std::stoi(month.str()); 
+    timeMap["year"] = std::stoi(year.str());
+    timeMap["hour"] = std::stoi(hour.str()); 
+    timeMap["minute"] = std::stoi(minute.str());
     return timeMap; 
 }
 
 bool stringInVector (std::string key, std::vector<std::string> checkVec) {
     return (std::find(checkVec.begin(), checkVec.end(), key) == checkVec.end());
+}
+
+
+std::map<std::string, std::string> Eventcache::getEvent(dpp::snowflake messageId) {
+    return eventMap[messageId];
+}
+
+void Eventcache::setEvent(dpp::snowflake messageId, std::map<std::string, std::string> event) {
+    eventMap[messageId] = event;
+}
+
+void Eventcache::removeEvent(dpp::snowflake messageId) {
+    eventMap.erase(messageId);
 }

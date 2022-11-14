@@ -9,23 +9,6 @@
 #include "commands/map.h"
 #include "utils/utils.h"
 
-class Eventcache {
-public:
-    std::map<dpp::snowflake, std::map<std::string, std::string>> eventMap; 
-
-    std::map<std::string, std::string> getEvent(dpp::snowflake messageId) {
-        return eventMap[messageId];
-    }
-
-    void setEvent(dpp::snowflake messageId, std::map<std::string, std::string> event) {
-        eventMap[messageId] = event;
-    }
-
-    void removeEvent(dpp::snowflake messageId) {
-        eventMap.erase(messageId);
-    }
-};
-
 int main() {
     Config config;
     Eventcache eventCache;
@@ -74,10 +57,10 @@ int main() {
                 std::map<std::string, std::string> commandParams;
                 try {
                     commandParams = eventCache.getEvent(event.command.message_id);
-                    commandParams["query"] = event.values[0];
                 } catch(const std::exception& e) {
-                    commandParams["query"] = event.values[0];
+                    bot.log(dpp::ll_info, fmt::format("No cache found for {}", event.command.message_id));
                 }
+                commandParams["query"] = event.values[0];
                 originalMsg.components.clear();
                 originalMsg.set_content(stopMain(event.command.channel_id, commandParams).content);
                 bot.message_edit_sync(originalMsg);
@@ -119,8 +102,16 @@ int main() {
             dpp::slashcommand map("map", "Get map of stop", bot.me.id);
             map.add_option(dpp::command_option(dpp::co_string, "stop", "Stop ID or name.", true));
             map.set_dm_permission(true);
+
+            dpp::slashcommand route("route", "Get route from point A to point B", bot.me.id);
+            route.set_dm_permission(true);
+            route.add_option(dpp::command_option(dpp::co_string, "departure", "Departure location", true));
+            route.add_option(dpp::command_option(dpp::co_string, "destination", "Destination location", true));
+            route.add_option(dpp::command_option(dpp::co_integer, "hour", "Hour to search at.", false).set_min_value(0).set_max_value(23));
+            route.add_option(dpp::command_option(dpp::co_integer, "minute", "Minute to search at.", false).set_min_value(0).set_max_value(59));
+            route.add_option(dpp::command_option(dpp::co_string, "date", "Date. Format DD.MM or alternatively DD.MM.YYYY", false).set_max_length(10));
             
-            std::vector<dpp::slashcommand> commands = {query, map};
+            std::vector<dpp::slashcommand> commands = {query, map, route};
             bot.global_bulk_command_create(commands);
         }
     });
