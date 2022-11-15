@@ -7,6 +7,7 @@
 #include <map>
 #include "commands/stop.h"
 #include "commands/map.h"
+#include "commands/route.h"
 #include "utils/utils.h"
 
 int main() {
@@ -29,7 +30,7 @@ int main() {
                         parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
                     }
                 } catch(const std::exception& e) {
-                    bot.log(dpp::ll_info, fmt::format("Parameter {} not entered", param));
+                    bot.log(dpp::ll_info, fmt::format("Stop: Parameter {} not entered", param));
                 }  
             }
             dpp::message stopMessage = stopMain(event.command.channel_id, parameters);
@@ -42,11 +43,30 @@ int main() {
                 });
             }   
         }
+
         if (event.command.get_command_name() == "map") {
             std::map<std::string, std::string> parameters;
             parameters["query"] = std::get<std::string>(event.get_parameter("stop"));
             dpp::message mapMessage = getMap(event.command.channel_id, parameters);
             event.reply(mapMessage);
+        }
+
+        if (event.command.get_command_name() == "route") {
+            std::string params[5] = {"departure", "destination", "hour", "minute", "date"};
+            std::map<std::string, std::string> parameters;
+            for (std::string param : params) {
+                try {
+                    if (param == "departure" || param == "destination" || param == "date") {
+                        parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
+                    }  else {
+                        parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
+                    }
+                } catch(const std::exception& e) {
+                    bot.log(dpp::ll_info, fmt::format("Route: Parameter {} not entered", param));
+                }  
+            }
+            dpp::message routemessage = route(event.command.channel_id, parameters);
+            event.reply(routemessage);
         }
     });
 

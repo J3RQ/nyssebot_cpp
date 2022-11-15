@@ -19,7 +19,6 @@ dpp::message stopMain(dpp::snowflake channel, std::map<std::string, std::string>
 
 dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::string> stopParams) {
     json stopPayload;
-    int departureAmount = (stopParams.count("line") == 0) ? 16 : 24;
 
     std::time_t epochTimestamp = std::time(nullptr);     
 
@@ -27,37 +26,13 @@ dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::strin
     bool minuteEntered = stopParams.count("minute") != 0;
     bool dateEntered = stopParams.count("date") != 0;
 
-    if (hourEntered || minuteEntered || dateEntered) {
-        std::map<std::string, int> searchTime = getTime(epochTimestamp);
-        
-        if (hourEntered) {
-            searchTime["hour"] = std::stoi(stopParams["hour"]);
-        } 
-        if (minuteEntered) {
-            searchTime["minute"] = std::stoi(stopParams["minute"]);
-        }
-        
-        if (dateEntered) {
-            std::vector<std::string> date = splitString(stopParams["date"], '.');
-            if (date.size() == 2) {
-                searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]);
-            } else if(date.size() == 3) {
-                searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]), searchTime["year"] = std::stoi(date[2]);
-            } else {
-                return dpp::message(channel, std::string("```Invalid date.```"));
-            }
-        } 
+    int departureAmount = (stopParams.count("line") == 0) ? 16 : 24;
     
-        struct tm t = {0};
-        t.tm_year = searchTime["year"] - 1900;
-        t.tm_mon = searchTime["month"] - 1;
-        t.tm_mday = searchTime["day"];
-        t.tm_hour = searchTime["hour"];
-        t.tm_min =  searchTime["minute"];
-        std::time_t timeSinceEpoch = mktime(&t);
-
-        epochTimestamp = timeSinceEpoch;
+    if (hourEntered || minuteEntered || dateEntered) {
+        epochTimestamp = paramsToTimestamp(stopParams, hourEntered, minuteEntered, dateEntered);
     }
+
+    if (epochTimestamp == time_t(0)) return dpp::message(channel, "```Invalid date expression.```");
             
     stopPayload["query"] = fmt::format("query {{\n"
     "stop(id: \"tampere:{}\") {{\n"

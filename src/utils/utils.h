@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <fstream>
+#include <fmt/format.h>
 #include <dpp/message.h>
 
 class Config
@@ -21,8 +22,10 @@ public:
 };
 
 std::vector<std::string> splitString(std::string inputString, char splitChar);
-std::map<std::string, int> getTime (std::time_t timestamp);
+std::map<std::string, int> getTime(std::time_t timestamp);
 bool stringInVector (std::string key, std::vector<std::string> checkVec);
+time_t paramsToTimestamp(std::map<std::string, std::string> parameters, bool hourEntered, bool minuteEntered, bool dateEntered);
+std::string cleanTime(std::time_t);
 
 class Eventcache {
 public:

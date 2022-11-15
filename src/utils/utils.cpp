@@ -54,6 +54,44 @@ bool stringInVector (std::string key, std::vector<std::string> checkVec) {
     return (std::find(checkVec.begin(), checkVec.end(), key) == checkVec.end());
 }
 
+time_t paramsToTimestamp(std::map<std::string, std::string> parameters, bool hourEntered, bool minuteEntered, bool dateEntered) {
+    std::time_t epochTimestamp = std::time(nullptr);     
+
+    std::map<std::string, int> searchTime = getTime(epochTimestamp);
+    
+    if (hourEntered) {
+        searchTime["hour"] = std::stoi(parameters["hour"]);
+    } 
+    if (minuteEntered) {
+        searchTime["minute"] = std::stoi(parameters["minute"]);
+    }
+    
+    if (dateEntered) {
+        std::vector<std::string> date = splitString(parameters["date"], '.');
+        if (date.size() == 2) {
+            searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]);
+        } else if(date.size() == 3) {
+            searchTime["day"] = std::stoi(date[0]), searchTime["month"] = std::stoi(date[1]), searchTime["year"] = std::stoi(date[2]);
+        } else {
+            return time_t(0);
+        }
+    } 
+
+    struct tm t = {0};
+    t.tm_year = searchTime["year"] - 1900;
+    t.tm_mon = searchTime["month"] - 1;
+    t.tm_mday = searchTime["day"];
+    t.tm_hour = searchTime["hour"];
+    t.tm_min =  searchTime["minute"];
+    std::time_t timeSinceEpoch = mktime(&t);
+
+    epochTimestamp = timeSinceEpoch;
+    return epochTimestamp;
+}
+
+std::string cleanTime(std::time_t timestamp) {
+    return fmt::format("{:02}:{:02}", getTime(timestamp)["hour"], getTime(timestamp)["minute"]);
+}
 
 std::map<std::string, std::string> Eventcache::getEvent(dpp::snowflake messageId) {
     return eventMap[messageId];
