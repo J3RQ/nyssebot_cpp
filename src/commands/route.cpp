@@ -21,8 +21,17 @@ dpp::message route(dpp::snowflake channel, std::map<std::string, std::string> st
 
     json routeQuery;
 
-    std::time_t currentTime = std::time(nullptr);
-    std::map<std::string, int> dateMap = getTime(currentTime);
+    std::time_t timestamp = std::time(nullptr);
+
+    bool hourEntered = stopParams.count("hour") != 0;
+    bool minuteEntered = stopParams.count("minute") != 0;
+    bool dateEntered = stopParams.count("date") != 0;
+    
+    if (hourEntered || minuteEntered || dateEntered) {
+        timestamp = paramsToTimestamp(stopParams, hourEntered, minuteEntered, dateEntered);
+    }
+   
+    std::map<std::string, int> dateMap = getTime(timestamp);
 
     routeQuery["query"] = fmt::format("query {{\n"
         "plan(from: {{lat: {}, lon: {}}}, to: {{lat: {}, lon: {}}}, minTransferTime: 30, numItineraries: 3, walkReluctance: 1, walkSpeed: 1.7, date: \"{}-{}-{}\", time: \"{}:{}:00\", arriveBy: {}) {{\n"
@@ -32,9 +41,7 @@ dpp::message route(dpp::snowflake channel, std::map<std::string, std::string> st
                 "endTime\n"
                 "mode\n"
                 "duration\n"
-                "realTime\n"
                 "distance\n"
-                "transitLeg\n"
                 "from {{\n"
                     "name\n"
                 "}}\n"
@@ -58,6 +65,7 @@ dpp::message route(dpp::snowflake channel, std::map<std::string, std::string> st
     cpr::Header{{"Content-Type", "application/json"}});
 
     json responseJson = json::parse(r.text)["data"]["plan"]["itineraries"];
+    if (responseJson == json::array()) return dpp::message(channel, "```No routes found!```");
     std::string message;
 
     for (json itinerary : responseJson) {
