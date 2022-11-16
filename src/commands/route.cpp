@@ -32,6 +32,7 @@ dpp::message route(dpp::snowflake channel, std::map<std::string, std::string> st
     }
    
     std::map<std::string, int> dateMap = getTime(timestamp);
+    bool arriveBy = (stopParams.count("mode") != 0 && stopParams["mode"] == "arrival") ? true : false; 
 
     routeQuery["query"] = fmt::format("query {{\n"
         "plan(from: {{lat: {}, lon: {}}}, to: {{lat: {}, lon: {}}}, minTransferTime: 30, numItineraries: 3, walkReluctance: 1, walkSpeed: 1.7, date: \"{}-{}-{}\", time: \"{}:{}:00\", arriveBy: {}) {{\n"
@@ -58,7 +59,7 @@ dpp::message route(dpp::snowflake channel, std::map<std::string, std::string> st
             "}}\n"
         "}}\n"
     "}}", departure[0]["lat"], departure[0]["lon"], destination[0]["lat"], destination[0]["lon"],
-    dateMap["year"], dateMap["month"], dateMap["day"], dateMap["hour"], dateMap["minute"], false);
+    dateMap["year"], dateMap["month"], dateMap["day"], dateMap["hour"], dateMap["minute"], arriveBy);
 
     cpr::Response r = cpr::Post(cpr::Url{"https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"},
     cpr::Body{routeQuery.dump()},

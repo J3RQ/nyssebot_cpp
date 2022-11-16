@@ -23,15 +23,11 @@ int main() {
             std::string params[5] = {"query", "line", "hour", "minute", "date"};
             std::map<std::string, std::string> parameters;
             for (std::string param : params) {
-                try {
-                    if (param == "query" || param == "line" || param == "date") {
-                        parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
-                    }  else {
-                        parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
-                    }
-                } catch(const std::exception& e) {
-                    bot.log(dpp::ll_info, fmt::format("Stop: Parameter {} not entered", param));
-                }  
+                if (std::holds_alternative<std::string>(event.get_parameter(param))) {
+                    parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
+                } else if (std::holds_alternative<int64_t>(event.get_parameter(param))) {
+                    parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
+                } 
             }
             dpp::message stopMessage = stopMain(event.command.channel_id, parameters);
             event.reply(stopMessage);
@@ -52,21 +48,18 @@ int main() {
         }
 
         if (event.command.get_command_name() == "route") {
-            std::string params[5] = {"departure", "destination", "hour", "minute", "date"};
+            std::string params[6] = {"departure", "destination", "hour", "minute", "date", "mode"};
             std::map<std::string, std::string> parameters;
             for (std::string param : params) {
-                try {
-                    if (param == "departure" || param == "destination" || param == "date") {
-                        parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
-                    }  else {
-                        parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
-                    }
-                } catch(const std::exception& e) {
-                    bot.log(dpp::ll_info, fmt::format("Route: Parameter {} not entered", param));
-                }  
+                 if (std::holds_alternative<std::string>(event.get_parameter(param))) {
+                    parameters.insert(std::pair<std::string, std::string>(param, std::get<std::string>(event.get_parameter(param))));
+                } else if (std::holds_alternative<int64_t>(event.get_parameter(param))) {
+                    parameters.insert(std::pair<std::string, std::string>(param, std::to_string(std::get<int64_t>(event.get_parameter(param)))));
+                }
             }
+            event.thinking(false);
             dpp::message routemessage = route(event.command.channel_id, parameters);
-            event.reply(routemessage);
+            event.edit_original_response(routemessage);
         }
     });
 
@@ -130,6 +123,10 @@ int main() {
             route.add_option(dpp::command_option(dpp::co_integer, "hour", "Hour to search at.", false).set_min_value(0).set_max_value(23));
             route.add_option(dpp::command_option(dpp::co_integer, "minute", "Minute to search at.", false).set_min_value(0).set_max_value(59));
             route.add_option(dpp::command_option(dpp::co_string, "date", "Date. Format DD.MM or alternatively DD.MM.YYYY", false).set_max_length(10));
+            route.add_option(dpp::command_option(dpp::co_string, "mode", "Make entered time arrival time or departure time. Default behavior is departure.", false).
+                add_choice(dpp::command_option_choice("Arrival", std::string("arrival"))).
+                add_choice(dpp::command_option_choice("Departure", std::string("departure")))
+            );
             
             std::vector<dpp::slashcommand> commands = {query, map, route};
             bot.global_bulk_command_create(commands);
