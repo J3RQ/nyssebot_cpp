@@ -69,8 +69,7 @@ dpp::message stopSearch(dpp::snowflake channel, std::map<std::string, std::strin
         return dpp::message(channel, message);
     }
 
-    if (responseJson["stoptimesWithoutPatterns"].size() > 0)
-    {
+    if (responseJson["stoptimesWithoutPatterns"].size() > 0) {
         message.append(fmt::format("**__{}:__**", responseJson["name"].get<std::string>()));
 
         std::vector<std::string> lineVec;
