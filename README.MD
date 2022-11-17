@@ -14,10 +14,17 @@ libcpr/cpr
 
 ## Building
 How to build:
-```cpp
+```
 cmake -S . -B build
 cmake --build build
 cmake --build build -t test
+```
+
+## Config (.env)
+Add the token of your bot and Mapbox API key
+```
+TOKEN=example_bot_token
+MB_APIKEY=key_example
 ```
 
 ## Commands
@@ -28,6 +35,3 @@ Gets realtime departures from a stop. Results can be filtered down to include on
 Gets route instructions from point A to point B. 
 #### /map
 Gets a map tile to display the location of a stop.
-
-## Miscellaneous
-> I have no idea whether or not this can be built on Windows. I write and run the bot exclusively on linux machines, so I haven't had the chance to test that.
